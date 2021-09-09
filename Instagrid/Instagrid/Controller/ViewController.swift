@@ -12,7 +12,6 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
 {
     
     @IBOutlet weak var swipeLabel: UILabel!
-    var currentImageButton: UIButton!
     @IBOutlet weak var pictureView: UIView!
     
     @IBOutlet weak var layout1XConstraint: NSLayoutConstraint!
@@ -33,7 +32,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     @IBOutlet weak var layout2: UIButton!
     @IBOutlet weak var layout3: UIButton!
     
-    
+    var currentImageButton: UIButton!
     
     
     
@@ -43,30 +42,19 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(dragPictureView(sender:)))
         pictureView.addGestureRecognizer(panGestureRecognizer)
     }
-
-     @objc func dragPictureView(sender: UIPanGestureRecognizer) {
-        switch sender.state {
-        case .began , .changed :
-            transformPictureViewWith(gesture: sender)
-        case .cancelled , .ended:
-            let translation = sender.translation(in: pictureView)
-            let translationTransform = CGAffineTransform(translationX: translation.x, y: translation.y)
-            if traitCollection.horizontalSizeClass == .compact
-                , traitCollection.verticalSizeClass == .regular
-               , translation.y < 0
-            {
-                sharedImage()
-            } else if traitCollection.horizontalSizeClass == .regular
-                      , traitCollection.verticalSizeClass == .compact
-                      , translation.x < 0
-            {
-                sharedImage()
-            }
-            pictureView.transform = .identity
-        default:
-            break
+    
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?)
+    {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.horizontalSizeClass == .compact
+           , traitCollection.verticalSizeClass == .regular
+        {
+            swipeLabel.text = "swipe up to share"
         }
-        
+        else
+        {
+            swipeLabel.text = "swipe left to share"
+        }
     }
     
     @IBAction func tapLayout1(_ sender: Any) {
@@ -128,6 +116,40 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         currentImageButton = rightBottom
     }
 
+    @objc func dragPictureView(sender: UIPanGestureRecognizer)
+    {
+       switch sender.state {
+       case .began , .changed :
+           transformPictureViewWith(gesture: sender)
+       case .cancelled , .ended:
+           let translation = sender.translation(in: pictureView)
+           _ = CGAffineTransform(translationX: translation.x, y: translation.y)
+           if traitCollection.horizontalSizeClass == .compact
+               , traitCollection.verticalSizeClass == .regular
+              , translation.y < 0
+           {
+               sharedImage()
+           } else if traitCollection.horizontalSizeClass == .regular
+                     , traitCollection.verticalSizeClass == .compact
+                     , translation.x < 0
+           {
+               sharedImage()
+           }
+           pictureView.transform = .identity
+       default:
+           break
+       }
+       
+   }
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any])
+    {
+        
+        let image = info[UIImagePickerController.InfoKey.originalImage] as! UIImage
+        newButtonBackground(img: image, btn: currentImageButton)
+        picker.dismiss(animated: true, completion: nil)
+        
+    }
     
     private func chooseImage()
     {
@@ -150,30 +172,6 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         btn.setBackgroundImage(mainImageView.image, for: .normal)
         btn.setTitle("", for: .normal)
     }
-        
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any])
-    {
-        
-        let image = info[UIImagePickerController.InfoKey.originalImage] as! UIImage
-        newButtonBackground(img: image, btn: currentImageButton)
-        picker.dismiss(animated: true, completion: nil)
-        
-    }
-        
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?)
-    {
-        super.traitCollectionDidChange(previousTraitCollection)
-        if traitCollection.horizontalSizeClass == .compact
-           , traitCollection.verticalSizeClass == .regular
-        {
-            swipeLabel.text = "swipe up to share"
-        }
-        else
-        {
-            swipeLabel.text = "swipe left to share"
-        }
-    }
-        
         
     private func transformPictureViewWith(gesture: UIPanGestureRecognizer)
     {
